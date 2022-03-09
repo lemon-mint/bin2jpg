@@ -6,12 +6,12 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"math"
 
 	"github.com/andybalholm/brotli"
 )
 
 func ImageEncode(data []byte) image.Image {
-	const width = 5 * 5 * 8
 
 	var compressed bytes.Buffer
 	compressed.Write([]byte{0, 0, 0, 0})
@@ -20,6 +20,11 @@ func ImageEncode(data []byte) image.Image {
 	w.Close()
 	data = compressed.Bytes()
 	binary.LittleEndian.PutUint32(data[:4], uint32(len(data)-4))
+
+	var width = int(math.RoundToEven(math.Sqrt(float64(len(data)*8*5))/5.0)) * 5
+	if width < 10 {
+		width = 30
+	}
 
 	img := image.NewGray(image.Rect(0, 0, width, (len(data)*8/width+1)*5+3))
 	var x, y int
