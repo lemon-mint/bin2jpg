@@ -19,7 +19,7 @@ func ImageEncode(data []byte) image.Image {
 	w.Write(data)
 	w.Close()
 	data = compressed.Bytes()
-	binary.LittleEndian.PutUint32(data[:4], uint32(len(data)))
+	binary.LittleEndian.PutUint32(data[:4], uint32(len(data)-4))
 
 	img := image.NewGray(image.Rect(0, 0, width, (len(data)*8/width+1)*5+3))
 	var x, y int
@@ -49,7 +49,7 @@ func ImageEncode(data []byte) image.Image {
 
 func isBlack(c color.Color) bool {
 	r, g, b, _ := c.RGBA()
-	return r < 128 || g < 128 || b < 128
+	return r < 65536/2 && g < 65536/2 && b < 65536/2
 }
 
 func ImageDecode(img image.Image) ([]byte, error) {
