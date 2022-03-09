@@ -13,6 +13,8 @@ func printUsage() {
 	fmt.Println("Usage: bin2png [options] inputfile")
 	fmt.Println("\t-o: output file name")
 	fmt.Println("\t-e: output file format (png | jpg)")
+	fmt.Println("\t-k: encryption key")
+	fmt.Println("\t-h: print this help")
 	os.Exit(1)
 }
 
@@ -33,6 +35,11 @@ loop:
 				fmt.Println("Error: -e must be png or jpg")
 				printUsage()
 			}
+		case "-h":
+			printUsage()
+		case "-k":
+			flags["k"] = args[i+1]
+			i++
 		default:
 			if i == len(args)-1 {
 				args = args[i:]
@@ -66,7 +73,12 @@ loop:
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-	img := bin2jpg.ImageEncode(data)
+
+	if _, ok := flags["k"]; !ok {
+		flags["k"] = ""
+	}
+
+	img := bin2jpg.ImageEncode(data, []byte(flags["k"]))
 
 	switch flags["e"] {
 	case "png":

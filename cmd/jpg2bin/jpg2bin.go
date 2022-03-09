@@ -18,6 +18,7 @@ import (
 func printUsage() {
 	fmt.Println("Usage: jpg2bin [options] inputfile")
 	fmt.Println("\t-o: output file name")
+	fmt.Println("\t-k: decryption key")
 	os.Exit(1)
 }
 
@@ -29,6 +30,9 @@ loop:
 		switch args[i] {
 		case "-o":
 			flags["o"] = args[i+1]
+			i++
+		case "-k":
+			flags["k"] = args[i+1]
 			i++
 		default:
 			if i == len(args)-1 {
@@ -65,6 +69,10 @@ loop:
 		printUsage()
 	}
 
+	if _, ok := flags["k"]; !ok {
+		flags["k"] = ""
+	}
+
 	inputFile, err := os.Open(inputFileName)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -76,7 +84,7 @@ loop:
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-	data, err := bin2jpg.ImageDecode(img)
+	data, err := bin2jpg.ImageDecode(img, []byte(flags["k"]))
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)

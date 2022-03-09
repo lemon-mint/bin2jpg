@@ -3,23 +3,36 @@ package bin2jpg
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"image"
 	"image/color"
 	"io"
 	"math"
 
 	"github.com/andybalholm/brotli"
+	"github.com/lemon-mint/vbox"
 )
 
-func ImageEncode(data []byte) image.Image {
-
-	var compressed bytes.Buffer
-	compressed.Write([]byte{0, 0, 0, 0})
-	w := brotli.NewWriterLevel(&compressed, brotli.BestCompression)
+func ImageEncode(data []byte, key []byte) image.Image {
+	var compressBuffer bytes.Buffer
+	w := brotli.NewWriterLevel(&compressBuffer, brotli.BestCompression)
 	w.Write(data)
+	w.Flush()
 	w.Close()
-	data = compressed.Bytes()
-	binary.LittleEndian.PutUint32(data[:4], uint32(len(data)-4))
+
+	compressed := compressBuffer.Bytes()
+
+	if len(key) > 0 {
+		box := vbox.NewBlackBox(key)
+		compressed = box.Seal(compressed)
+	}
+
+	var length [4]byte
+	binary.LittleEndian.PutUint32(length[:], uint32(len(compressed)))
+
+	data = nil
+	data = append(data, length[:]...)
+	data = append(data, compressed...)
 
 	var width = int(math.RoundToEven(math.Sqrt(float64(len(data)*8*5))/5.0)) * 5
 	if width < 10 {
@@ -57,7 +70,9 @@ func isBlack(c color.Color) bool {
 	return r < 65536/2 && g < 65536/2 && b < 65536/2
 }
 
-func ImageDecode(img image.Image) ([]byte, error) {
+var ErrAEADOpenError = errors.New("bin2jpg: aead open error")
+
+func ImageDecode(img image.Image, key []byte) ([]byte, error) {
 	var data []byte
 	bound := img.Bounds()
 	bound_x := bound.Max.X
@@ -94,6 +109,15 @@ func ImageDecode(img image.Image) ([]byte, error) {
 
 	for i := 0; i < int(l); i++ {
 		data = append(data, readByte())
+	}
+
+	if len(key) > 0 {
+		box := vbox.NewBlackBox(key)
+		var ok bool
+		data, ok = box.OpenOverWrite(data)
+		if !ok {
+			return nil, ErrAEADOpenError
+		}
 	}
 
 	r := brotli.NewReader(bytes.NewReader(data))
