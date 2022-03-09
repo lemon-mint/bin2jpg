@@ -4,4 +4,4 @@
 
 # LICENSE
 
-![MIT License](./LICENSE.jpg)
+![MIT License](./l.jpg)
