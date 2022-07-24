@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/andybalholm/brotli v1.0.4
 	github.com/lemon-mint/vbox v1.3.1
-	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
+	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539
 )
 
 require (
